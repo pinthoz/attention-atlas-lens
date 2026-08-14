@@ -101,6 +101,27 @@ export function isMetricKey(value: string | null): value is MetricKey {
   return value !== null && value in METRIC_BY_KEY;
 }
 
+/**
+ * Shading the index by head family rather than by a measurement. Kept apart
+ * from MetricKey because it is a different kind of thing: the colour names a
+ * category and ranks nothing, so none of the range/normalise machinery
+ * applies to it.
+ */
+export const ROLE_SHADE = "cluster";
+
+/**
+ * Shading the index by the bias ratio. Separate again because it is a
+ * DIVERGING measure centred on 1.0, so it needs the two-hue scale rather than
+ * the run-relative ramp the other measures use.
+ */
+export const BIAS_SHADE = "bias";
+
+export type ShadeKey = MetricKey | typeof ROLE_SHADE | typeof BIAS_SHADE;
+
+export function isShadeKey(value: string | null): value is ShadeKey {
+  return value === ROLE_SHADE || value === BIAS_SHADE || isMetricKey(value);
+}
+
 export function metricValue(
   metrics: HeadMetrics | null | undefined,
   key: MetricKey,
@@ -112,7 +133,7 @@ export function metricValue(
 export interface MetricRange {
   min: number;
   max: number;
-  /** False when no head produced a value — e.g. `balance` on GPT-2. */
+  /** False when no head produced a value, e.g. `balance` on GPT-2. */
   defined: boolean;
 }
 
@@ -121,7 +142,7 @@ export interface MetricRange {
  *
  * The index is shaded relative to this run, not to some absolute scale,
  * because the interesting signal is which heads stand out from their
- * neighbours. The legend says so out loud — a reader who thinks the scale is
+ * neighbours. The legend says so out loud, a reader who thinks the scale is
  * absolute would draw conclusions the colours do not support.
  */
 export function metricRange(

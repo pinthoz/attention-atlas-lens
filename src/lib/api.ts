@@ -3,14 +3,14 @@
  *
  * Deliberately no Next.js route handlers in front of this. The API lives on a
  * Hugging Face Space that sleeps when idle; the first request after it wakes
- * can take 30–60s, which exceeds a Vercel Hobby function's timeout. A proxy
+ * can take 30-60s, which exceeds a Vercel Hobby function's timeout. A proxy
  * would turn a slow-but-fine request into a hard 504. A browser fetch just
  * waits. It also keeps the site a static export with no server at all.
  *
  * The cost of calling cross-origin from the browser is CORS: the Space must
  * allow this site's origin (it sets `FRONTEND_ORIGIN`, plus localhost:3000 for
  * development). A CORS rejection surfaces to JS as an opaque `TypeError` with
- * no status, indistinguishable from the network being down — `toApiError`
+ * no status, indistinguishable from the network being down, `toApiError`
  * handles that case explicitly rather than reporting a misleading cause.
  */
 
@@ -18,6 +18,10 @@ import type {
   AnalyzeRequest,
   AnalyzeResponse,
   ApiErrorBody,
+  BiasRequest,
+  BiasResponse,
+  FaithfulnessRequest,
+  FaithfulnessResponse,
   HealthResponse,
   ModelsResponse,
 } from "./types";
@@ -98,7 +102,7 @@ async function request<T>(
 /**
  * Ping health. Called on mount purely to start waking a sleeping Space, so
  * the user's first real request meets a warm server. Never surfaced as an
- * error — a failed wake-up ping is not something to interrupt anyone about.
+ * error, a failed wake-up ping is not something to interrupt anyone about.
  */
 export function getHealth(signal?: AbortSignal): Promise<HealthResponse> {
   return request<HealthResponse>("/api/health", { method: "GET" }, signal);
@@ -114,6 +118,46 @@ export function analyze(
 ): Promise<AnalyzeResponse> {
   return request<AnalyzeResponse>(
     "/api/analyze",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    signal,
+  );
+}
+
+/**
+ * Bias detection. A separate request from `analyze` on purpose: it runs a
+ * second forward pass through a different model, and the attention view
+ * should not be held up waiting for it.
+ */
+export function detectBias(
+  body: BiasRequest,
+  signal?: AbortSignal,
+): Promise<BiasResponse> {
+  return request<BiasResponse>(
+    "/api/bias",
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    signal,
+  );
+}
+
+/**
+ * Head ablation. Costs one forward pass per head tested on top of the bias
+ * analysis it depends on, so this is never fired automatically, the page asks
+ * for it only when someone presses the button.
+ */
+export function testFaithfulness(
+  body: FaithfulnessRequest,
+  signal?: AbortSignal,
+): Promise<FaithfulnessResponse> {
+  return request<FaithfulnessResponse>(
+    "/api/faithfulness",
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },

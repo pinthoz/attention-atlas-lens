@@ -3,7 +3,7 @@
  *
  * Two ramps, deliberately different, because they answer different questions.
  *
- * MAGMA — the attention matrix. Perceptually uniform and monotonic in
+ * MAGMA, the attention matrix. Perceptually uniform and monotonic in
  * lightness, so equal steps in weight look like equal steps in colour and the
  * scale survives greyscale printing and colour-vision deficiency. A rainbow
  * ramp (jet, turbo) has non-monotonic lightness: it invents banding where the
@@ -13,7 +13,7 @@
  * attention is sparse, so the many near-zero cells sink into a dark field and
  * the few genuine spikes are what the eye lands on.
  *
- * INDIGO — the layer x head index. Single-hue and quiet, because that grid is
+ * INDIGO, the layer x head index. Single-hue and quiet, because that grid is
  * navigation furniture surrounding the heatmap, not a second hero. Keeping it
  * monochrome means the page has exactly one chromatic surface, so "colourful"
  * always means "attention weight" and never anything else.
@@ -89,6 +89,33 @@ export function rgbCss([r, g, b]: RGB): string {
   return `rgb(${r} ${g} ${b})`;
 }
 
+/**
+ * Diverging scale for the bias ratios, which are centred on 1.0 rather than
+ * on zero: 1.0 means a head gives flagged words exactly the share an even
+ * spread would. That midpoint is the whole point of the measure, so it needs a
+ * neutral, with one hue for "less than expected" and another for "more" -
+ * a sequential ramp would hide it inside a gradient and imply that low values
+ * are simply "less of the same thing".
+ *
+ * Poles are the two ends of the validated family palette; the midpoint is a
+ * neutral grey, never a hue.
+ *
+ * @param ratio the value
+ * @param spread how far from 1.0 counts as the full end of the scale
+ */
+export function divergingCss(ratio: number | null, spread = 1.5): string {
+  if (ratio === null || !Number.isFinite(ratio)) return "#e2e8f0";
+  const t = Math.max(-1, Math.min(1, (ratio - 1) / spread));
+  const mid: RGB = [226, 232, 240];
+  const pole: RGB = t >= 0 ? [213, 94, 0] : [0, 114, 178];
+  const k = Math.abs(t);
+  return rgbCss([
+    Math.round(mid[0] + (pole[0] - mid[0]) * k),
+    Math.round(mid[1] + (pole[1] - mid[1]) * k),
+    Math.round(mid[2] + (pole[2] - mid[2]) * k),
+  ]);
+}
+
 export function magmaCss(t: number): string {
   return rgbCss(magma(t));
 }
@@ -121,11 +148,28 @@ export function rampGradient(kind: "magma" | "indigo", steps = 12): string {
   return `linear-gradient(to right, ${stops.join(", ")})`;
 }
 
+/**
+ * Interface colours the canvas needs by value, mirroring the CSS theme.
+ * The heatmap sits inside a white card, so `surface` is its ground and the
+ * causal mask is drawn as that same white under a slate hatch, the mask
+ * reads as card showing through rather than as a cell with a value.
+ */
 export const PALETTE = {
-  paper: "#EEF0F4",
-  surface: "#F8F9FB",
-  ink: "#14161B",
-  graphite: "#5B6272",
-  rule: "#D8DCE4",
-  ruleStrong: "#B9C0CD",
+  canvas: "#F0F4F8",
+  surface: "#FFFFFF",
+  line: "#E2E8F0",
+  lineStrong: "#CBD5E1",
+  ink: "#1E293B",
+  muted: "#64748B",
+  faint: "#94A3B8",
+  /** The dashboard's pink. Interface only, it never touches the matrix. */
+  brand: "#FF5CA9",
+  /**
+   * Annotations drawn ON the matrix, such as the sentence-pair boundary.
+   * Blue and not the brand pink on purpose: magma runs black → purple →
+   * magenta → orange → cream, so a pink line sits close to real values near
+   * the middle of the scale, while nothing in magma is ever this blue. The
+   * mark can therefore never be read as a weight.
+   */
+  mark: "#3B82F6",
 } as const;

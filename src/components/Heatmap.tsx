@@ -7,7 +7,7 @@
  * At the API's ceiling of 100 tokens this is a 100 x 100 grid: 10,000 cells.
  * In SVG that is 10,000 <rect> nodes, which React has to reconcile and the
  * browser has to lay out, paint and keep in the accessibility tree. SVG's two
- * real advantages are free hit-testing and free semantics — but the grid is
+ * real advantages are free hit-testing and free semantics, but the grid is
  * perfectly uniform, so hit-testing collapses to two divisions:
  *
  *     row = floor((y - marginTop) / cellSize)
@@ -21,7 +21,7 @@
  * is answered outside this component: the token ribbon is real DOM text
  * carrying the selected row, the readout is an aria-live region, and the grid
  * is keyboard-navigable with arrow keys. The 12 x 12 head index next door
- * went the other way and is real DOM buttons — 144 nodes is cheap, and there
+ * went the other way and is real DOM buttons, 144 nodes is cheap, and there
  * the focus and label machinery is worth having for free.
  *
  * Smoothness: cells are painted once into an offscreen canvas and blitted on
@@ -150,9 +150,9 @@ export default function Heatmap({
     tile.height = 6;
     const t = tile.getContext("2d");
     if (!t) return null;
-    t.fillStyle = PALETTE.paper;
+    t.fillStyle = PALETTE.surface;
     t.fillRect(0, 0, 6, 6);
-    t.strokeStyle = PALETTE.rule;
+    t.strokeStyle = PALETTE.lineStrong;
     t.lineWidth = 1;
     t.beginPath();
     t.moveTo(-1, 5);
@@ -177,7 +177,7 @@ export default function Heatmap({
     if (!ctx) return;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    ctx.fillStyle = PALETTE.paper;
+    ctx.fillStyle = PALETTE.surface;
     ctx.fillRect(0, 0, w, h);
 
     const hatch = makeHatch(ctx);
@@ -189,7 +189,7 @@ export default function Heatmap({
         const y = marginTop + i * cell;
 
         // A causal model cannot see the future. Those cells are not a weight
-        // of zero — they are a place where no weight exists. The API sends
+        // of zero, they are a place where no weight exists. The API sends
         // them as 0, numerically identical to a genuine zero, so the mask has
         // to be derived structurally and drawn as something no value can be.
         if (isCausal && j > i) {
@@ -201,13 +201,14 @@ export default function Heatmap({
         }
 
         const value = row[j];
-        ctx.fillStyle = value === null ? PALETTE.rule : rgbCss(magma(max > 0 ? value / max : 0));
+        ctx.fillStyle =
+          value === null ? PALETTE.line : rgbCss(magma(max > 0 ? value / max : 0));
         ctx.fillRect(x, y, cell, cell);
       }
     }
 
     if (cell >= 9) {
-      ctx.strokeStyle = "rgba(238,240,244,0.10)";
+      ctx.strokeStyle = "rgba(255,255,255,0.10)";
       ctx.lineWidth = 1;
       ctx.beginPath();
       for (let k = 0; k <= n; k++) {
@@ -221,8 +222,10 @@ export default function Heatmap({
     }
 
     if (boundary !== null) {
-      ctx.strokeStyle = "#cd4071";
-      ctx.lineWidth = 1.5;
+      // Annotation, not a value: this blue appears nowhere in magma, so the
+      // line can never be mistaken for a weight.
+      ctx.strokeStyle = PALETTE.mark;
+      ctx.lineWidth = 2;
       const p = marginTop + boundary * cell;
       const q = marginLeft + boundary * cell;
       ctx.beginPath();
@@ -240,8 +243,7 @@ export default function Heatmap({
 
       for (let i = 0; i < n; i++) {
         const token = tokens[i];
-        ctx.fillStyle =
-          token.kind === "special" ? PALETTE.ruleStrong : PALETTE.graphite;
+        ctx.fillStyle = token.kind === "special" ? PALETTE.faint : PALETTE.muted;
         ctx.textAlign = "right";
         ctx.fillText(axisLabel(token), marginLeft - 8, marginTop + i * cell + cell / 2);
 
@@ -285,13 +287,12 @@ export default function Heatmap({
     };
 
     // The pinned row, always visible so you never lose your place.
-    strokeRow(selectedRow, "#f8f9fb", 1.5);
-    strokeRow(selectedRow, "rgba(20,22,27,0.45)", 0.5);
+    strokeRow(selectedRow, "rgba(255,255,255,0.75)", 1.5);
 
     const active = hovered ?? focusCell;
     if (active) {
-      strokeRow(active.row, "#fdca8d", 2);
-      ctx.strokeStyle = "rgba(253,202,141,0.55)";
+      strokeRow(active.row, "#ffffff", 2);
+      ctx.strokeStyle = "rgba(255,255,255,0.5)";
       ctx.lineWidth = 1;
       ctx.strokeRect(
         marginLeft + active.col * cell - 0.5,

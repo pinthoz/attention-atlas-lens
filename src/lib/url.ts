@@ -6,14 +6,14 @@
  * see what a link points at without loading it.
  */
 
-import { isMetricKey, type MetricKey } from "./metrics";
+import { isShadeKey, type ShadeKey } from "./metrics";
 
 export interface ViewState {
   text: string;
   model: string;
   layer: number;
   head: number;
-  metric: MetricKey;
+  metric: ShadeKey;
 }
 
 function readInt(params: URLSearchParams, key: string, fallback: number): number {
@@ -31,7 +31,7 @@ export function readView(search: string, defaults: ViewState): ViewState {
     model: params.get("model") ?? defaults.model,
     layer: readInt(params, "layer", defaults.layer),
     head: readInt(params, "head", defaults.head),
-    metric: isMetricKey(metric) ? metric : defaults.metric,
+    metric: isShadeKey(metric) ? metric : defaults.metric,
   };
 }
 

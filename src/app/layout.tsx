@@ -1,42 +1,55 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Mono, IBM_Plex_Sans, Newsreader } from "next/font/google";
+import { Inter, JetBrains_Mono, Outfit, Space_Grotesk } from "next/font/google";
 import "./globals.css";
 
 /**
- * Three faces, each with a job the reader can feel:
- *   Newsreader  - natural language, as it exists before a tokenizer touches it
- *   Plex Sans   - the interface talking
- *   Plex Mono   - the machine's representation: tokens, numbers, coordinates
- * The serif/mono split is doing semantic work, not decoration; it lands where
- * a sentence and its tokenisation sit next to each other.
+ * The dashboard's own type stack, so the two surfaces feel like one product:
+ *   Inter          - interface text
+ *   Space Grotesk  - card titles and the wordmark
+ *   JetBrains Mono - tokens, weights, coordinates (and tabular figures)
+ *   Outfit         - the pill controls, where the dashboard uses it
  */
 
-const plexSans = IBM_Plex_Sans({
+const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-sans",
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-inter",
   display: "swap",
 });
 
-const plexMono = IBM_Plex_Mono({
+const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  weight: ["400", "500", "600"],
-  variable: "--font-plex-mono",
+  weight: ["500", "600", "700"],
+  variable: "--font-grotesk",
   display: "swap",
 });
 
-const newsreader = Newsreader({
+const jetbrains = JetBrains_Mono({
   subsets: ["latin"],
-  weight: ["300", "400"],
-  style: ["normal", "italic"],
-  variable: "--font-newsreader",
+  weight: ["400", "500"],
+  variable: "--font-jetbrains",
+  display: "swap",
+});
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-outfit",
   display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "Attention Atlas",
+  title: "Attention Atlas Lens",
   description:
     "Read attention inside BERT and GPT-2, one head at a time. Pick a layer and head, and watch where each token looks.",
+  // The dashboard's own mark, copied from attention-atlas/static/favicon.ico.
+  icons: {
+    icon: [
+      { url: "/icon.png", type: "image/png", sizes: "32x32" },
+      { url: "/favicon.ico", sizes: "any" },
+    ],
+    apple: "/logo.png",
+  },
 };
 
 export default function RootLayout({
@@ -47,9 +60,18 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${plexSans.variable} ${plexMono.variable} ${newsreader.variable}`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrains.variable} ${outfit.variable}`}
     >
-      <body>{children}</body>
+      {/*
+       * Browser extensions (theme switchers, readers, grammar tools) commonly
+       * stamp attributes such as `data-rm-theme` onto <body> before React
+       * hydrates, which React then reports as a server/client mismatch. The
+       * attribute is not ours, nothing in this project writes it, so the
+       * warning is noise about the visitor's browser rather than a bug.
+       * suppressHydrationWarning applies to this element's own attributes
+       * only, one level deep, so real mismatches inside the tree still surface.
+       */}
+      <body suppressHydrationWarning>{children}</body>
     </html>
   );
 }

@@ -1,63 +1,147 @@
 @import "tailwindcss";
 
+/*
+ * Design tokens lifted from the Attention Atlas dashboard
+ * (attention_app/ui/styles.py) so the two surfaces read as one product:
+ * the same pink, the same navy, the same 16px cards on #f0f4f8.
+ *
+ * One rule governs colour here, and it is the reason the segment marker is
+ * blue rather than pink: the interface may use the brand colours anywhere
+ * except inside the matrix, where every hue has to belong to the magma scale
+ * so a reader can trust colour to mean magnitude. Annotations drawn over the
+ * matrix use --color-mark, which appears nowhere in magma.
+ */
 @theme {
-  /* Achromatic interface. Every drop of chroma on this page belongs to the
-     data, so nothing in the chrome competes with a value being read off a
-     colour ramp. */
-  --color-paper: #eef0f4;
-  --color-surface: #f8f9fb;
-  --color-ink: #14161b;
-  --color-graphite: #5b6272;
-  --color-rule: #d8dce4;
-  --color-rule-strong: #b9c0cd;
+  --color-brand: #ff5ca9;
+  --color-brand-hover: #ff74b8;
+  --color-brand-active: #e64090;
+  --color-brand-soft: #fff1f7;
+  --color-brand-ring: #ffc9e2;
+  --color-mark: #3b82f6;
 
-  --font-display: var(--font-plex-mono), ui-monospace, monospace;
-  --font-body: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-data: var(--font-plex-mono), ui-monospace, monospace;
-  --font-language: var(--font-newsreader), ui-serif, Georgia, serif;
+  --color-canvas: #f0f4f8;
+  --color-surface: #ffffff;
+  --color-ink: #1e293b;
+  --color-muted: #64748b;
+  --color-faint: #94a3b8;
+  --color-line: #e2e8f0;
+  --color-line-strong: #cbd5e1;
+
+  --color-navy: #0f172a;
+  --color-navy-text: #e2e8f0;
+
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
+  --font-display: var(--font-grotesk), var(--font-inter), sans-serif;
+  --font-pill: var(--font-outfit), var(--font-inter), sans-serif;
 }
 
 @layer base {
   html {
-    background-color: var(--color-paper);
+    background-color: var(--color-canvas);
   }
 
   body {
-    background-color: var(--color-paper);
+    background-color: var(--color-canvas);
     color: var(--color-ink);
-    font-family: var(--font-body);
+    font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Numbers are read down columns all over this page, so digits must hold
-     their own width. */
+  /* Numbers are read down columns throughout, so digits hold their width. */
   .tabular {
-    font-family: var(--font-data);
+    font-family: var(--font-mono);
     font-variant-numeric: tabular-nums;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-ink);
+    outline: 2px solid var(--color-brand);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: 6px;
   }
 
   ::selection {
-    background: #cd4071;
-    color: #f8f9fb;
+    background: #ffd9ea;
+    color: var(--color-ink);
   }
 }
 
-@layer utilities {
-  /* The eyebrow labels. Monospace, wide-tracked, small — the page's one
-     recurring structural device, marking each region of the instrument. */
-  .eyebrow {
+@layer components {
+  /* .card: radius 16px, 24px padding, the dashboard's exact shadow. */
+  .card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line);
+    border-radius: 16px;
+    padding: 24px;
+    box-shadow:
+      0 1px 3px rgb(0 0 0 / 0.05),
+      0 1px 2px rgb(0 0 0 / 0.1);
+  }
+
+  /* A card that takes the slack when its column is shorter than the one
+     beside it, so the two end level instead of leaving a ragged gap. Pair it
+     with `mt-auto` on the card's closing note: the extra height then falls
+     between the content and the footnote, which reads as deliberate spacing
+     rather than as an unfinished card. */
+  .card-fill {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  /* .card h4 in the dashboard: 16px, 600, Space Grotesk, tight tracking. */
+  .card-title {
     font-family: var(--font-display);
-    font-size: 0.6875rem;
+    font-size: 16px;
     font-weight: 600;
-    letter-spacing: 0.16em;
+    letter-spacing: -0.01em;
+    color: var(--color-ink);
+  }
+
+  /* .sidebar-label: 11px uppercase, 1px tracking. Kept as the page's small
+     label, now on light rather than navy. */
+  .field-label {
+    display: block;
+    font-size: 11px;
+    font-weight: 600;
     text-transform: uppercase;
-    color: var(--color-graphite);
+    letter-spacing: 1px;
+    color: var(--color-muted);
+  }
+
+  .field {
+    background: var(--color-surface);
+    border: 1px solid var(--color-line-strong);
+    border-radius: 8px;
+    color: var(--color-ink);
+    transition: border-color 0.15s;
+  }
+
+  .field:hover {
+    border-color: var(--color-faint);
+  }
+
+  /* Border colour only. An `outline: none` here would beat the global
+     :focus-visible rule and leave the form fields as the one place on the
+     page with no visible keyboard focus. */
+  .field:focus {
+    border-color: var(--color-brand);
+  }
+
+  .field::placeholder {
+    color: var(--color-faint);
+  }
+
+  /* Pill controls: 9999px radius, Outfit 700 at 13px, as the dashboard. */
+  .pill {
+    border-radius: 9999px;
+    font-family: var(--font-pill);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.3px;
+    transition:
+      background 0.2s,
+      color 0.2s;
   }
 }
 

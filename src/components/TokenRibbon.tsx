@@ -10,12 +10,12 @@
  * *nurse*". It doubles as the accessible face of the canvas heatmap: real
  * text, in the DOM, in order.
  *
- * Laid out as inline text rather than a flex row, so that subword pieces can
- * sit flush against each other. "ap" + "##olo" + "##gis" + "##ed" has to read
- * as "apologised" — the colour changes across the word show which piece drew
- * the attention, without the tokenizer's seams turning it into four words.
- * That is why the chips carry no horizontal padding: word spacing comes from
- * real space characters between them, which stay untinted.
+ * Laid out as inline text rather than a flex row, so subword pieces can sit
+ * flush. "ap" + "##olo" + "##gis" + "##ed" has to read as "apologised", the
+ * colour changes across the word show which piece drew the attention without
+ * the tokenizer's seams turning it into four words. Hence chips padded only
+ * on the sides that are not a seam, with word spacing from real, untinted
+ * space characters.
  */
 
 import { magma, readableOn, rgbCss } from "@/lib/color";
@@ -43,33 +43,32 @@ export default function TokenRibbon({
   );
 
   return (
-    <div className="font-language text-[clamp(1.05rem,2.2vw,1.35rem)] leading-[2.1]">
+    <div className="text-[1.0625rem] leading-[2.4] tracking-[-0.005em]">
       {tokens.map((token, position) => {
         const weight = weights[token.index];
-        // Pad only the sides that are not a subword seam, so whole words get
-        // breathing room while the pieces of one word stay welded together.
-        const nextJoins = tokens[position + 1]?.joinsPrevious ?? false;
         const t = max > 0 && weight !== null ? weight / max : 0;
         // Below a few percent of the peak, a tint is noise. Leaving those
-        // tokens on the page ground keeps the sentence readable and stops a
-        // faint wash from implying attention that is not there.
+        // tokens on the card keeps the sentence readable and stops a faint
+        // wash from implying attention that is not there.
         const tinted = t > 0.04;
         const colour = magma(t);
         const isQuery = token.index === queryIndex;
         const special = token.kind === "special";
+        // Pad only the sides that are not a subword seam, so whole words get
+        // breathing room while the pieces of one word stay welded together.
+        const nextJoins = tokens[position + 1]?.joinsPrevious ?? false;
 
         return (
           <span key={token.index}>
-            {/* Word spacing lives out here, untinted, so that continuation
-                pieces get no space and everything else does. */}
             {token.index > 0 && !token.joinsPrevious && " "}
 
+            {/* Blue, matching the line the canvas draws at the same index. */}
             {boundary !== null && token.index === boundary && (
               <span
-                className="eyebrow mr-1.5 border-l-2 border-[#cd4071] pl-1.5 text-[#cd4071]"
+                className="mr-2 rounded-md bg-mark/10 px-1.5 py-1 align-middle font-mono text-[0.65em] font-medium text-mark"
                 title="BERT encoded this input as a sentence pair. Segment B starts here."
               >
-                B{" "}
+                B
               </span>
             )}
 
@@ -79,21 +78,21 @@ export default function TokenRibbon({
               aria-label={`${token.raw}, receiving ${
                 weight === null ? "no value" : weight.toFixed(3)
               } of attention from ${tokens[queryIndex]?.raw ?? "the selected token"}`}
-              title={`${token.raw} · ${weight === null ? "—" : weight.toFixed(4)}`}
-              className={`py-[3px] align-baseline transition-colors duration-100 ${
+              title={`${token.raw} · ${weight === null ? "-" : weight.toFixed(4)}`}
+              className={`py-[5px] align-baseline transition-colors duration-100 ${
                 special
-                  ? "font-data mx-0.5 rounded-[2px] px-1 text-[0.62em] uppercase"
-                  : ""
+                  ? "mx-0.5 rounded-md bg-canvas px-1.5 font-mono text-[0.62em] text-faint ring-1 ring-line"
+                  : "rounded-[4px] hover:bg-canvas"
               } ${
                 isQuery
-                  ? "underline decoration-[#cd4071] decoration-2 underline-offset-[6px]"
+                  ? "underline decoration-brand decoration-2 underline-offset-[7px]"
                   : ""
               }`}
               style={{
-                backgroundColor: tinted ? rgbCss(colour) : "transparent",
-                color: tinted ? readableOn(colour) : undefined,
-                paddingLeft: special ? undefined : token.joinsPrevious ? 0 : 3,
-                paddingRight: special ? undefined : nextJoins ? 0 : 3,
+                backgroundColor: tinted && !special ? rgbCss(colour) : undefined,
+                color: tinted && !special ? readableOn(colour) : undefined,
+                paddingLeft: special ? undefined : token.joinsPrevious ? 0 : 4,
+                paddingRight: special ? undefined : nextJoins ? 0 : 4,
               }}
             >
               {token.text}
